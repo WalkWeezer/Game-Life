@@ -39,7 +39,6 @@ function updateCellSize(width, height) {
     
     const largerDimension = Math.max(width, height);
     const cellSize = Math.max(minCellSize, Math.min(maxCellSize, Math.floor(maxCanvasSize / largerDimension)));
-    console.log(cellSize);
     return cellSize;
 }
 
@@ -47,7 +46,6 @@ function updateCellSize(width, height) {
 function drawGrid(grid, prevGrid, width, height) {
     const imageData = ctx.createImageData(width * cellSize, height * cellSize);
     const data = imageData.data;
-    console.log(cellSize);
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = y * width + x;
