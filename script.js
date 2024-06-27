@@ -18,9 +18,9 @@ let prevY = -1;
 function gameLoop() {
     if (isRunning) {
         const start = performance.now();
+        prevGrid = gameGrid.slice(); // Сохранение текущего состояния в prevGrid
         gameGrid = updateGrid(gameGrid, width, height);
         drawGrid(gameGrid, prevGrid, width, height);
-        prevGrid = gameGrid.slice(); // Сохранение текущего состояния в prevGrid
         const end = performance.now();
         document.getElementById('generation-time').innerText = `Время генерации: ${(end - start).toFixed(2)} мс`;
         requestAnimationFrame(gameLoop);
@@ -34,23 +34,27 @@ function createGrid(width, height) {
 
 // Отображение сетки
 function drawGrid(grid, prevGrid, width, height) {
+    let count = 0;
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = y * width + x;
+            grid[idx] ? count++ : '';
             if (grid[idx] !== prevGrid[idx]) { // Перерисовка только измененных клеток
                 ctx.fillStyle = grid[idx] ? 'black' : 'white';
                 ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
     }
+    console.log(count);
 }
 
 // Генерация случайного первого поколения
 function generateRandomGrid(width, height) {
+    prevGrid = gameGrid.slice();
     for (let i = 0; i < width * height; i++) {
         gameGrid[i] = Math.random() > 0.8 ? 1 : 0;
-    }
-    drawGrid(gameGrid, createGrid(width, height), width, height);
+    }    
+    drawGrid(gameGrid, prevGrid, width, height);
 }
 
 // Обновление поколения
@@ -104,16 +108,16 @@ document.getElementById('start-stop-simulation').addEventListener('click', () =>
 document.getElementById('width').addEventListener('change', (e) => {
     width = parseInt(e.target.value);
     canvas.width = width * cellSize;
+    prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
-    prevGrid = createGrid(width, height); // Обновление prevGrid
     drawGrid(gameGrid, prevGrid, width, height);
 });
 
 document.getElementById('height').addEventListener('change', (e) => {
     height = parseInt(e.target.value);
     canvas.height = height * cellSize;
+    prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
-    prevGrid = createGrid(width, height); // Обновление prevGrid
     drawGrid(gameGrid, prevGrid, width, height);
 });
 
@@ -124,8 +128,8 @@ document.getElementById('generate-random').addEventListener('click', () => {
 
 // Очистка поля
 document.getElementById('clear').addEventListener('click', () => {
+    prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
-    prevGrid = createGrid(width, height); // Обновление prevGrid
     drawGrid(gameGrid, prevGrid, width, height);
 });
 
@@ -137,7 +141,7 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('mousemove', (e) => {
     if (isDrawing) {
-        updateCellState(e);
+        updateCellState(e, true);
     }
 });
 
@@ -153,21 +157,25 @@ canvas.addEventListener('mouseleave', () => {
     prevY = -1;
 });
 
-function updateCellState(e) {
+function updateCellState(e, isMove = false) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = Math.floor((e.clientX - rect.left) * scaleX / cellSize);
     const y = Math.floor((e.clientY - rect.top) * scaleY / cellSize);
 
-    if (x !== prevX || y !== prevY) {
-        const idx = y * width + x;
-        gameGrid[idx] = gameGrid[idx] ? 0 : 1;
-        drawGrid(gameGrid, prevGrid, width, height);
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+        if (!isMove || (x !== prevX || y !== prevY)) {
+            const idx = y * width + x;
+            prevGrid = gameGrid.slice();
+            gameGrid[idx] = gameGrid[idx] ? 0 : 1;
+            drawGrid(gameGrid, prevGrid, width, height);
+        }
         prevX = x;
         prevY = y;
     }
 }
+
 
 // Инициализация
 drawGrid(gameGrid, prevGrid, width, height);
