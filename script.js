@@ -2,7 +2,7 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 let width = parseInt(document.getElementById('width').value);
 let height = parseInt(document.getElementById('height').value);
-let cellSize = 10;
+let cellSize = 1;
 
 canvas.width = width * cellSize;
 canvas.height = height * cellSize;
@@ -18,7 +18,7 @@ let prevY = -1;
 function gameLoop() {
     if (isRunning) {
         const start = performance.now();
-        prevGrid = gameGrid.slice(); // Сохранение текущего состояния в prevGrid
+        prevGrid = gameGrid.slice();
         gameGrid = updateGrid(gameGrid, width, height);
         drawGrid(gameGrid, prevGrid, width, height);
         const end = performance.now();
@@ -32,17 +32,39 @@ function createGrid(width, height) {
     return new Uint8Array(width * height);
 }
 
+function updateCellSize(width, height) {
+    const maxCanvasSize = 500; // Максимальный размер холста (ширина или высота)
+    const maxCellSize = 10;     // Максимальный размер клетки
+    const minCellSize = 1;      // Минимальный размер клетки
+    
+    const largerDimension = Math.max(width, height);
+    const cellSize = Math.max(minCellSize, Math.min(maxCellSize, Math.floor(maxCanvasSize / largerDimension)));
+    console.log(cellSize);
+    return cellSize;
+}
+
 // Отображение сетки
 function drawGrid(grid, prevGrid, width, height) {
+    const imageData = ctx.createImageData(width * cellSize, height * cellSize);
+    const data = imageData.data;
+    console.log(cellSize);
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = y * width + x;
-            if (grid[idx] !== prevGrid[idx]) { // Перерисовка только измененных клеток
-                ctx.fillStyle = grid[idx] ? 'black' : 'white';
-                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            const color = grid[idx] ? 0 : 255;
+            for (let dy = 0; dy < cellSize; dy++) {
+                for (let dx = 0; dx < cellSize; dx++) {
+                    const pixelIndex = 4 * ((y * cellSize + dy) * width * cellSize + (x * cellSize + dx));
+                    data[pixelIndex] = color;
+                    data[pixelIndex + 1] = color;
+                    data[pixelIndex + 2] = color;
+                    data[pixelIndex + 3] = 255;
+                }
             }
         }
     }
+
+    ctx.putImageData(imageData, 0, 0);
 }
 
 // Генерация случайного первого поколения
@@ -50,7 +72,7 @@ function generateRandomGrid(width, height) {
     prevGrid = gameGrid.slice();
     for (let i = 0; i < width * height; i++) {
         gameGrid[i] = Math.random() > 0.8 ? 1 : 0;
-    }    
+    }
     drawGrid(gameGrid, prevGrid, width, height);
 }
 
@@ -104,6 +126,7 @@ document.getElementById('start-stop-simulation').addEventListener('click', () =>
 // Изменение размера поля
 document.getElementById('width').addEventListener('change', (e) => {
     width = parseInt(e.target.value);
+    cellSize = updateCellSize(width, height);
     canvas.width = width * cellSize;
     prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
@@ -112,6 +135,7 @@ document.getElementById('width').addEventListener('change', (e) => {
 
 document.getElementById('height').addEventListener('change', (e) => {
     height = parseInt(e.target.value);
+    cellSize = updateCellSize(width, height);
     canvas.height = height * cellSize;
     prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
@@ -172,7 +196,6 @@ function updateCellState(e, isMove = false) {
         prevY = y;
     }
 }
-
 
 // Инициализация
 drawGrid(gameGrid, prevGrid, width, height);
