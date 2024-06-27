@@ -88,8 +88,6 @@ function generateRandomGrid(width, height) {
 }
 
 // Обновление поколения
-const stableCells = [];
-
 function updateGrid(grid, width, height) {
     const newGrid = grid.slice(); // Используем существующий массив как буфер
     const totalCells = width * height;
