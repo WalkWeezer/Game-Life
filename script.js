@@ -34,18 +34,15 @@ function createGrid(width, height) {
 
 // Отображение сетки
 function drawGrid(grid, prevGrid, width, height) {
-    let count = 0;
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = y * width + x;
-            grid[idx] ? count++ : '';
             if (grid[idx] !== prevGrid[idx]) { // Перерисовка только измененных клеток
                 ctx.fillStyle = grid[idx] ? 'black' : 'white';
                 ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
     }
-    console.log(count);
 }
 
 // Генерация случайного первого поколения
