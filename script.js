@@ -126,6 +126,7 @@ document.getElementById('width').addEventListener('change', (e) => {
     width = parseInt(e.target.value);
     cellSize = updateCellSize(width, height);
     canvas.width = width * cellSize;
+    canvas.height = height * cellSize;
     prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
     drawGrid(gameGrid, prevGrid, width, height);
@@ -135,6 +136,7 @@ document.getElementById('height').addEventListener('change', (e) => {
     height = parseInt(e.target.value);
     cellSize = updateCellSize(width, height);
     canvas.height = height * cellSize;
+    canvas.width = width * cellSize;
     prevGrid = gameGrid.slice();
     gameGrid = createGrid(width, height);
     drawGrid(gameGrid, prevGrid, width, height);
