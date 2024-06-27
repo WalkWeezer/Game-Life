@@ -17,19 +17,32 @@ let prevY = -1;
 // Основной игровой цикл
 function gameLoop() {
     if (isRunning) {
-        const start = performance.now();
+        const startCopy = performance.now();
         prevGrid = gameGrid.slice();
+        const endCopy = performance.now();
+
+        const startUpdate = performance.now();
         gameGrid = updateGrid(gameGrid, width, height);
+        const endUpdate = performance.now();
+
+        const startDraw = performance.now();
         drawGrid(gameGrid, prevGrid, width, height);
-        const end = performance.now();
-        document.getElementById('generation-time').innerText = `Время генерации: ${(end - start).toFixed(2)} мс`;
+        const endDraw = performance.now();
+
+        document.getElementById('generation-time').innerText = `
+            Время копирования: ${(endCopy - startCopy).toFixed(2)} мс
+            Время обновления: ${(endUpdate - startUpdate).toFixed(2)} мс
+            Время отрисовки: ${(endDraw - startDraw).toFixed(2)} мс
+        `;
+
         requestAnimationFrame(gameLoop);
     }
 }
 
+
 // Создание пустой сетки
 function createGrid(width, height) {
-    return new Uint8Array(width * height);
+    return new Uint32Array(width * height);
 }
 
 function updateCellSize(width, height) {
@@ -75,35 +88,57 @@ function generateRandomGrid(width, height) {
 }
 
 // Обновление поколения
+const stableCells = [];
+
 function updateGrid(grid, width, height) {
-    const newGrid = new Uint8Array(width * height);
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = y * width + x;
-            const neighbors = countNeighbors(grid, x, y, width, height);
-            if (grid[idx]) {
-                newGrid[idx] = neighbors === 2 || neighbors === 3 ? 1 : 0;
-            } else {
-                newGrid[idx] = neighbors === 3 ? 1 : 0;
-            }
-        }
+    const newGrid = grid.slice(); // Используем существующий массив как буфер
+    const totalCells = width * height;
+
+    for (let idx = 0; idx < totalCells; idx++) {
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+        const neighbors = countNeighbors(grid, x, y, width, height);
+        const alive = grid[idx];
+
+        // Правила игры "Жизнь"
+        // Если клетка живая и имеет 2 или 3 соседей, она остается живой
+        // Если клетка мертвая и имеет 3 соседа, она становится живой
+        // В противном случае клетка остается мертвой       
+        newGrid[idx] = alive && (neighbors === 2 || neighbors === 3) || !alive && neighbors === 3 ? 1 : 0;
+
     }
+
     return newGrid;
 }
+
 
 // Подсчет соседей с учетом эмуляции тора
 function countNeighbors(grid, x, y, width, height) {
     let count = 0;
-    for (let i = -1; i <= 1; i++) {
-        for (let j = -1; j <= 1; j++) {
-            if (i === 0 && j === 0) continue;
-            const nx = (x + i + width) % width;
-            const ny = (y + j + height) % height;
-            count += grid[ny * width + nx];
-        }
-    }
+
+    // Предварительные вычисления для тороидальных условий
+    const xm1 = (x - 1 + width) % width;
+    const xp1 = (x + 1) % width;
+    const ym1 = (y - 1 + height) % height;
+    const yp1 = (y + 1) % height;
+
+    // Соседи по вертикали
+    count += grid[ym1 * width + xm1];
+    count += grid[ym1 * width + x];
+    count += grid[ym1 * width + xp1];
+    
+    count += grid[y * width + xm1];
+    count += grid[y * width + xp1];
+    
+    count += grid[yp1 * width + xm1];
+    count += grid[yp1 * width + x];
+    count += grid[yp1 * width + xp1];
+
     return count;
 }
+
+
+
 
 // Запуск симуляции
 const startStopBtn = document.getElementById('start-stop-simulation');
